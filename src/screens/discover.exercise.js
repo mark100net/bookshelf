@@ -44,7 +44,6 @@ function DiscoverBooksScreen({user}) {
     setQuery(event.target.elements.search.value)
   }
 
-
   return (
     <div>
       <form onSubmit={handleSearchSubmit}>

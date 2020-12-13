@@ -11,19 +11,23 @@ import {
 } from 'react-icons/fa'
 import Tooltip from '@reach/tooltip'
 // 🐨 you'll need useQuery, useMutation, and queryCache from 'react-query'
-import { useQuery, useMutation, useQueryCache } from 'react-query'
+import {useQuery, useMutation, queryCache} from 'react-query'
 
 // 🐨 you'll also need client from 'utils/api-client'
-import { client } from 'utils/api-client'
+import {client} from 'utils/api-client'
 import {useAsync} from 'utils/hooks'
 import * as colors from 'styles/colors'
 import {CircleButton, Spinner} from './lib'
 
-function TooltipButton({label, isLoading, highlight, onClick, icon, ...rest}) {
-  const {isError, error, run} = useAsync()
-
+function TooltipButton({label, highlight, onClick, icon, ...rest}) {
+  const {isLoading, isError, error, run} = useAsync()
+  
   function handleClick() {
     run(onClick())
+  }
+
+  if (label === 'Remove from list') {
+    console.log('isloading:', isLoading)
   }
 
   return (
@@ -54,70 +58,64 @@ function StatusButtons({user, book}) {
   // 🐨 call useQuery here to get the listItem (if it exists)
   // queryKey should be 'list-items'
   // queryFn should call the list-items endpoint
-  const { isLoading, isError, data, error } = useQuery({
+
+  const {data: listItems} = useQuery({
     queryKey: ['list-items'],
-    queryFn: () => 
-      client('list-items', { token: user.token}).then(data => data.listItems)  
+    queryFn: () =>
+      client('list-items', { token: user.token}).then(data => data.listItems)
   })
 
-  const queryCache = useQueryCache()
-
-  // 🐨 call useMutation here and assign the mutate function to "update"
-  const [update] = useMutation((updates) => {
-    const listItemId = updates.id
-    client(`list-items/${listItemId}`, {
-      data: updates,
-      method: 'PUT',
-      token: user.token,
-    })},
+  const [update] = useMutation(
+    updates => {
+      console.log("updates", updates)
+      client(`list-items/${updates.id}`, {
+        data: updates,
+        method: 'PUT',
+        token: user.token,
+      })
+    },
     {
-      onSuccess: () => {
-        console.log('invalidating update')
+      onSettled: () => {
+        console.log("update settled")
         queryCache.invalidateQueries('list-items')
-    }
-  })
-    
+      },
+    },
+  )
+
   // 🐨 call useMutation here and assign the mutate function to "remove"
   // the mutate function should call the list-items/:listItemId endpoint with a DELETE
-  const [remove] = useMutation((listItemId) => {
-    console.log('removing')
-    client(`list-items/${listItemId}`, {
-      method: 'DELETE',
-
-      token: user.token
-    })},
+  const [remove] = useMutation(
+    listItemId => {
+      client(`list-items/${listItemId}`, {
+        method: 'DELETE',
+        token: user.token,
+      })
+    },
     {
-      onSuccess: () => {
-        console.log('invalidating')
+      onSettled: () => {
         queryCache.invalidateQueries('list-items')
-    }
-  })
-  
+      },
+    },
+  )
 
   // 🐨 call useMutation here and assign the mutate function to "create"
   // the mutate function should call the list-items endpoint with a POST
   // and the bookId the listItem is being created for.
-  const [create] = useMutation((bookId) => {
-    client('list-items', {
-      data: {bookId},
-      token: user.token
-    })},
+  const [create] = useMutation(
+    bookId => {
+      client('list-items', {
+        data: {bookId},
+        token: user.token,
+      })
+    },
     {
-      onSuccess: () => {
+      onSettled: () => {
         queryCache.invalidateQueries('list-items')
-    }
-  })
+      },
+    },
+  )
 
-  // if (isLoading) {
-  //   return null
-  // }
-
-  // if (isError) {
-  //   console.error("There was an error with the status buttons:", error)
-  //   return null
-  // }
-
-  const listItem = (data && data.find((item) => item.bookId === book.id))
+  const listItem = listItems?.find(item => item.bookId === book.id) ?? null
 
   return (
     <React.Fragment>
@@ -130,7 +128,6 @@ function StatusButtons({user, book}) {
             // 💰 to mark a list item as unread, set the finishDate to null
             // {id: listItem.id, finishDate: null}
             onClick={() => update({id: listItem.id, finishDate: null})}
-            isLoading={isLoading}
             icon={<FaBook />}
           />
         ) : (
@@ -158,7 +155,7 @@ function StatusButtons({user, book}) {
           label="Add to list"
           highlight={colors.indigo}
           // 🐨 add an onClick here that calls create
-          onClick={()=> create(book.id)}
+          onClick={() => create(book.id)}
           icon={<FaPlusCircle />}
         />
       )}

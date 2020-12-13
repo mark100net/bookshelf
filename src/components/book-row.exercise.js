@@ -14,32 +14,15 @@ import {Rating} from './rating'
 function BookRow({user, book}) {
   const {title, author, coverImageUrl} = book
 
-  // 🐨 call useQuery here to get the list item
-  // queryKey should be 'list-items'
-  // queryFn should be a call to the list-items endpoint
-  const {data, error, isLoading, isError} = useQuery({
+  const {data: listItems} = useQuery({
     queryKey: ['list-items'],
     queryFn: () =>
       client('list-items', { token: user.token}).then(data => data.listItems)
   })
 
-  if (isLoading) {
-    return null
-  }
-
-  if (isError) {
-    return "<div>There was an error showing a book</div>"
-  }
-  
-  const listItems = data ?? null
-
-  if (!listItems) {
-    return null
-  }
-
-  const listItem = listItems.find(item => {
+  const listItem = listItems?.find(item => {
     return item.id === book.id
-  })
+  }) ?? null
 
   const id = `book-row-book-${book.id}`
 

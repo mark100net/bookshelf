@@ -8,7 +8,6 @@ import Tooltip from '@reach/tooltip'
 import {useParams} from 'react-router-dom'
 // 🐨 you'll need these:
 import {useQuery, useMutation, queryCache} from 'react-query'
-import {useAsync} from 'utils/hooks'
 import {client} from 'utils/api-client'
 import {formatDate} from 'utils/misc'
 import * as mq from 'styles/media-queries'
@@ -30,29 +29,22 @@ const loadingBook = {
 function BookScreen({user}) {
   const {bookId} = useParams()
 
-  // 🐨 call useQuery here
-  // queryKey should be ['book', {bookId}]
-  // queryFn should be what's currently passed in the run function below
-  const { loadingBook, bookError, bookData } = useQuery({
+  const {data: book = loadingBook} = useQuery({
     queryKey: ['book', {bookId}],
-    queryFn: () => client(`books/${bookId}`, {token: user.token})
+    queryFn: () =>
+      client(`books/${bookId}`, {token: user.token}).then(data => data.book),
   })
 
-  // 🐨 call useQuery to get the list item from the list-items endpoint
-  // queryKey should be 'list-items'
-  // queryFn should call the 'list-items' endpoint with the user's token
-  const { loadingListItem, listItemError, data } = useQuery({
+  const {data: listItems} = useQuery({
     queryKey: ['list-items'],
-    queryFn: () => 
-      client('list-items', {token: user.token})  
+    queryFn: () =>
+      client('list-items', { token: user.token}).then(data => data.listItems)
   })
-  // 🐨 search through the listItems you got from react-query and find the
-  // one with the right bookId.
-  const listItem = data.listItems.find((item) => {
-    return (item.id === bookId)
+
+  const listItem = listItems?.find(item => {
+    return item.bookId === bookId
   })
-  
-  const book = data?.book ?? loadingBook
+
   const {title, author, coverImageUrl, publisher, synopsis} = book
 
   return (
@@ -139,12 +131,15 @@ function NotesTextarea({listItem, user}) {
   // the mutate function should call the list-items/:listItemId endpoint with a PUT
   //   and the updates as data. The mutate function will be called with the updates
   //   you can pass as data.
-  const [mutate] = useMutation(({id: listItemId, notes}) => {
-    client(`list-items/${listItemId}`, {
-      data: { notes },
-      method: 'PUT'
-    })
-  })
+  const [mutate] = useMutation(
+    updates =>
+      client(`list-items/${updates.id}`, {
+        data: updates,
+        token: user.token,
+        method: 'PUT',
+      }),
+    {onSettled: () => queryCache.invalidateQueries('list-items')},
+  )
 
   // 💰 if you want to get the list-items cache updated after this query finishes
   // the use the `onSettled` config option to queryCache.invalidateQueries('list-items')
