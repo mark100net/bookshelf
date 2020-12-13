@@ -7,30 +7,20 @@ import {FaRegCalendarAlt} from 'react-icons/fa'
 import Tooltip from '@reach/tooltip'
 import {useParams} from 'react-router-dom'
 import { useBook } from 'utils/books'
-// 🐨 you'll need these:
-import {useQuery, useMutation, queryCache} from 'react-query'
-import {client} from 'utils/api-client'
 import {formatDate} from 'utils/misc'
 import * as mq from 'styles/media-queries'
 import * as colors from 'styles/colors'
 import {Textarea} from 'components/lib'
 import {Rating} from 'components/rating'
 import {StatusButtons} from 'components/status-buttons'
+import { useListItem, useUpdateListItem } from 'utils/list-items' 
 
 function BookScreen({user}) {
   const {bookId} = useParams()
 
   const { book } = useBook(bookId, user)
 
-  const {data: listItems} = useQuery({
-    queryKey: ['list-items'],
-    queryFn: () =>
-      client('list-items', { token: user.token}).then(data => data.listItems)
-  })
-
-  const listItem = listItems?.find(item => {
-    return item.bookId === bookId
-  })
+  const listItem = useListItem(user, bookId)
 
   const {title, author, coverImageUrl, publisher, synopsis} = book
 
@@ -114,22 +104,8 @@ function ListItemTimeframe({listItem}) {
 }
 
 function NotesTextarea({listItem, user}) {
-  // 🐨 call useMutation here
-  // the mutate function should call the list-items/:listItemId endpoint with a PUT
-  //   and the updates as data. The mutate function will be called with the updates
-  //   you can pass as data.
-  const [mutate] = useMutation(
-    updates =>
-      client(`list-items/${updates.id}`, {
-        data: updates,
-        token: user.token,
-        method: 'PUT',
-      }),
-    {onSettled: () => queryCache.invalidateQueries('list-items')},
-  )
+  const mutate = useUpdateListItem(user)
 
-  // 💰 if you want to get the list-items cache updated after this query finishes
-  // the use the `onSettled` config option to queryCache.invalidateQueries('list-items')
   const debouncedMutate = React.useMemo(() => debounceFn(mutate, {wait: 300}), [
     mutate,
   ])

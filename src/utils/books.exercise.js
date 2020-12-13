@@ -22,4 +22,24 @@ function useBook(bookId, user) {
   return { book: book || loadingBook }
 }
 
-export { useBook }
+function useBookSearch(query, user) {
+  const {data, error, isLoading, isError, isSuccess} = useQuery({
+    queryKey: ['bookSearch', {query}],
+    queryFn: () => client(`books?query=${encodeURIComponent(query)}`, {
+      token: user.token,
+    }).then(data => data.books),
+  })
+
+  const loadingBooks = Array.from({length: 10}, (v, index) => ({
+    id: `loading-book-${index}`,
+    ...loadingBook,
+  }))
+  
+  const books = data ?? loadingBooks
+
+  return { books, error, isLoading, isError, isSuccess }
+
+}
+
+
+export { useBook, useBookSearch }
