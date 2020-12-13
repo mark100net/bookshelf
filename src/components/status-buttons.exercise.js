@@ -10,10 +10,7 @@ import {
   FaTimesCircle,
 } from 'react-icons/fa'
 import Tooltip from '@reach/tooltip'
-// 🐨 you'll need useQuery, useMutation, and queryCache from 'react-query'
 import {useQuery, useMutation, queryCache} from 'react-query'
-
-// 🐨 you'll also need client from 'utils/api-client'
 import {client} from 'utils/api-client'
 import {useAsync} from 'utils/hooks'
 import * as colors from 'styles/colors'
@@ -24,10 +21,6 @@ function TooltipButton({label, highlight, onClick, icon, ...rest}) {
   
   function handleClick() {
     run(onClick())
-  }
-
-  if (label === 'Remove from list') {
-    console.log('isloading:', isLoading)
   }
 
   return (
@@ -55,10 +48,6 @@ function TooltipButton({label, highlight, onClick, icon, ...rest}) {
 }
 
 function StatusButtons({user, book}) {
-  // 🐨 call useQuery here to get the listItem (if it exists)
-  // queryKey should be 'list-items'
-  // queryFn should call the list-items endpoint
-
   const {data: listItems} = useQuery({
     queryKey: ['list-items'],
     queryFn: () =>
@@ -67,7 +56,6 @@ function StatusButtons({user, book}) {
 
   const [update] = useMutation(
     updates => {
-      console.log("updates", updates)
       client(`list-items/${updates.id}`, {
         data: updates,
         method: 'PUT',
@@ -76,7 +64,6 @@ function StatusButtons({user, book}) {
     },
     {
       onSettled: () => {
-        console.log("update settled")
         queryCache.invalidateQueries('list-items')
       },
     },

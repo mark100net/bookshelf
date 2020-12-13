@@ -2,9 +2,7 @@
 import {jsx} from '@emotion/core'
 
 import {Link} from 'react-router-dom'
-// 🐨 get useQuery from react-query
 import {useQuery} from 'react-query'
-// 🐨 you'll also need the client from 'utils/api-client'
 import {client} from 'utils/api-client'
 import * as mq from 'styles/media-queries'
 import * as colors from 'styles/colors'
