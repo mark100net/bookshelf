@@ -10,18 +10,21 @@ import {
   FaTimesCircle,
 } from 'react-icons/fa'
 import Tooltip from '@reach/tooltip'
-import {useMutation, queryCache} from 'react-query'
-import {client} from 'utils/api-client'
-import {useListItem, useUpdateListItem} from 'utils/list-items'
+import {useCreateListItem, useListItem, useRemoveListItem, useUpdateListItem} from 'utils/list-items'
 import {useAsync} from 'utils/hooks'
 import * as colors from 'styles/colors'
 import {CircleButton, Spinner} from './lib'
 
 function TooltipButton({label, highlight, onClick, icon, ...rest}) {
-  const {isLoading, isError, error, run} = useAsync()
+  const {isLoading, isError, error, reset, run} = useAsync()
   
   function handleClick() {
-    run(onClick())
+    if (isError) {
+      reset()
+    }
+    else {  
+      run(onClick())
+    }  
   }
 
   return (
@@ -52,54 +55,9 @@ function StatusButtons({user, book}) {
   
   const listItem = useListItem(user, book.id)
 
-  const updateListItem = useUpdateListItem(user)
-  // const [update] = useMutation(
-  //   updates => {
-  //     client(`list-items/${updates.id}`, {
-  //       data: updates,
-  //       method: 'PUT',
-  //       token: user.token,
-  //     })
-  //   },
-  //   {
-  //     onSettled: () => {
-  //       queryCache.invalidateQueries('list-items')
-  //     },
-  //   },
-  // )
-
-  // 🐨 call useMutation here and assign the mutate function to "remove"
-  // the mutate function should call the list-items/:listItemId endpoint with a DELETE
-  const [remove] = useMutation(
-    listItemId => {
-      client(`list-items/${listItemId}`, {
-        method: 'DELETE',
-        token: user.token,
-      })
-    },
-    {
-      onSettled: () => {
-        queryCache.invalidateQueries('list-items')
-      },
-    },
-  )
-
-  // 🐨 call useMutation here and assign the mutate function to "create"
-  // the mutate function should call the list-items endpoint with a POST
-  // and the bookId the listItem is being created for.
-  const [create] = useMutation(
-    bookId => {
-      client('list-items', {
-        data: {bookId},
-        token: user.token,
-      })
-    },
-    {
-      onSettled: () => {
-        queryCache.invalidateQueries('list-items')
-      },
-    },
-  )
+  const [createListItem] = useCreateListItem(user)
+  const [updateListItem] = useUpdateListItem(user, { throwOnError: true})
+  const [removeListItem] = useRemoveListItem(user)
 
   return (
     <React.Fragment>
@@ -131,7 +89,7 @@ function StatusButtons({user, book}) {
           label="Remove from list"
           highlight={colors.danger}
           // 🐨 add an onClick here that calls remove
-          onClick={() => remove(listItem.id)}
+          onClick={() => removeListItem(listItem.id)}
           icon={<FaMinusCircle />}
         />
       ) : (
@@ -139,7 +97,7 @@ function StatusButtons({user, book}) {
           label="Add to list"
           highlight={colors.indigo}
           // 🐨 add an onClick here that calls create
-          onClick={() => create(book.id)}
+          onClick={() => createListItem(book.id)}
           icon={<FaPlusCircle />}
         />
       )}

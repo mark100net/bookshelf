@@ -107,6 +107,9 @@ function NotesTextarea({listItem, user}) {
     mutate,
   ])
 
+  console.log("error", error)
+  console.log("isError:", isError)
+
   function handleNotesChange(e) {
     debouncedMutate({id: listItem.id, notes: e.target.value})
   }

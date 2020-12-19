@@ -3,8 +3,9 @@ import {jsx} from '@emotion/core'
 
 import * as React from 'react'
 import {FaStar} from 'react-icons/fa'
-import { useUpdateListItem} from 'utils/list-items'
+import {useUpdateListItem} from 'utils/list-items'
 import * as colors from 'styles/colors'
+import {ErrorMessage} from 'components/lib'
 
 const visuallyHiddenCSS = {
   border: '0',
@@ -20,7 +21,7 @@ const visuallyHiddenCSS = {
 function Rating({listItem, user}) {
   const [isTabbing, setIsTabbing] = React.useState(false)
 
-  const updateListItem = useUpdateListItem(user)
+  const [updateListItem, {error, isError}] = useUpdateListItem(user)
 
   React.useEffect(() => {
     function handleKeyDown(event) {
@@ -88,19 +89,28 @@ function Rating({listItem, user}) {
     )
   })
   return (
-    <div
-      onClick={e => e.stopPropagation()}
-      className={rootClassName}
-      css={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        [`&.${rootClassName}:hover input + label`]: {
-          color: 'orange',
-        },
-      }}
-    >
-      <span css={{display: 'flex'}}>{stars}</span>
-    </div>
+    <>
+      <div
+        onClick={e => e.stopPropagation()}
+        className={rootClassName}
+        css={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          [`&.${rootClassName}:hover input + label`]: {
+            color: 'orange',
+          },
+        }}
+      >
+        <span css={{display: 'flex'}}>{stars}</span>
+      </div>
+      {isError ? (
+        <ErrorMessage
+          error={error}
+          variant="inline"
+          css={{marginLeft: 6, fontSize: '0.7em'}}
+        />
+      ) : null}
+    </>
   )
 }
 
